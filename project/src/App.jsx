@@ -5,7 +5,7 @@ import { MouseController } from './controllers/MouseController';
 import { MainView } from './views/MainView';
 import { LoginPage } from './views/loginsign/LoginPage';
 import { SignUpPage } from './views/loginsign/Signup/';
-
+import { SenderDetailsPage } from './views/pages/SenderDetailsPage';
 // Inside <Routes>
 
 
@@ -42,6 +42,7 @@ function App() {
         {/* Route for LoginPage */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/sender-details" element={<SenderDetailsPage />} />
 
       </Routes>
     </Router>
