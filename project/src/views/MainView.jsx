@@ -183,7 +183,7 @@ export const MainView = ({
                 className={`w-full h-[500px] object-cover rounded-2xl shadow-2xl transition-transform duration-300 ${
                   isVisible ? 'scale-115' : ''
                 } ${isHovered ? 'scale-125' : ''}`}
-                muted
+               // muted
                 loop
                 playsInline
                 onMouseEnter={() => setIsHovered(true)}
