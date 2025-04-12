@@ -20,25 +20,27 @@ export const LoginPage = () => {
     const apiUrl = 'http://localhost:8080/api/users/login';
 
     try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const response = await fetch("http://localhost:8080/api/users/login", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
       });
 
-      if (response.ok) {
-        const data = await response.json(); // Parse JSON response
-        console.log('Login success response:', data);
-        setMessage(`Welcome, ${data.firstName || 'User'}!`);
+      const data = await response.json();
 
-        // Navigate to the home page
-        navigate('/'); // Adjust the route to match your application's home page
+      if (response.ok) {
+          // Save the token in localStorage
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("firstName", data.firstName);
+          localStorage.setItem("userId", data.id); // ✅ Save userId too
+          alert("Login successful!");
+          navigate("/"); // Redirect to profile page
       } else {
-        const errorData = await response.json(); // Handle error JSON response
-        console.error('Login error response:', errorData);
-        setMessage(errorData.message || 'Invalid login credentials.');
+          setError(data.message);
       }
-    } catch (error) {
+  } catch (error) {
       console.error('Login request failed:', error);
       setMessage('An error occurred. Please try again.');
     }

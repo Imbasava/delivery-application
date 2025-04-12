@@ -1,19 +1,24 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { MouseStateModel } from './models/MouseState';
-import { MouseController } from './controllers/MouseController';
-import { MainView } from './views/MainView';
-import { LoginPage } from './views/loginsign/LoginPage';
-import { SignUpPage } from './views/loginsign/Signup/';
-import { SenderDetailsPage } from './views/pages/SenderDetailsPage';
-// Inside <Routes>
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { MouseStateModel } from "./models/MouseState";
+import { MouseController } from "./controllers/MouseController";
+import { MainView } from "./views/MainView";
+import { LoginPage } from "./views/loginsign/LoginPage";
+import { SignUpPage } from "./views/loginsign/Signup";
+import { SenderDetailsPage } from "./views/pages/SenderDetailsPage";
+import { TravelerDetailsPage } from "./views/pages/TravelerDetailsPage";
+import { ProfilePage } from "./views/pages/ProfilePage";
+import ProtectedRoute from "./views/loginsign/ProtectedRoute"; // Import ProtectedRoute
+//import { ChooseTravelerPage } from "./views/pages/sender/ChooseTravelerPage";
+import { FindTravelersPage } from "./views/pages/sender/FindTravelersPage";
+
+
 
 
 function App() {
   const mouseModel = new MouseStateModel();
   const mouseController = new MouseController(mouseModel);
 
-  // Setup mouse event listeners
   useEffect(() => {
     const cleanup = mouseController.setupEventListeners();
     return () => cleanup();
@@ -27,7 +32,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Route for MainView */}
         <Route
           path="/"
           element={
@@ -39,14 +43,21 @@ function App() {
             />
           }
         />
-        {/* Route for LoginPage */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/sender-details" element={<SenderDetailsPage />} />
+        <Route path="/traveler-details" element={<TravelerDetailsPage />} />
+        <Route path="/find-travelers" element={<FindTravelersPage />} />
 
+        
+
+
+        {/* Protected Profile Route */}
+        <Route path="/profile" element={<ProtectedRoute element={<ProfilePage />} />} />
       </Routes>
     </Router>
-  );
+  );  
 }
 
 export default App;
+ 
