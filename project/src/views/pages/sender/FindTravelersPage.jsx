@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLoadScript } from "@react-google-maps/api";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyAwujdMkdhfqoEjqBcj6eOXMIBH35ZIbQ8"; // Replace with your API key
 const LIBRARIES = ["places"];
 
 export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
+  const navigate = useNavigate();
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: LIBRARIES,
@@ -15,9 +17,44 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
   const [originLatLng, setOriginLatLng] = useState({ lat: null, lng: null });
   const [destination, setDestination] = useState("");
   const [destinationLatLng, setDestinationLatLng] = useState({ lat: null, lng: null });
+  const [productName, setProductName] = useState(""); // State for product name
   const [travelers, setTravelers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState({});
+
+  useEffect(() => {
+    // Check if user is authenticated when component mounts
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("User is not authenticated. They'll need to login to book.");
+    }
+
+    // Check if we're returning from login with saved trip data
+    const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
+    if (redirectAfterLogin === "/find-travelers") {
+      // Clear the redirect flag
+      sessionStorage.removeItem("redirectAfterLogin");
+      
+      // If we have saved trip data, proceed with booking
+      const savedTripId = localStorage.getItem("tripId");
+      const savedTravelerId = localStorage.getItem("travelerId"); // Get saved travelerId
+      const savedProductName = sessionStorage.getItem("productName");
+      
+      if (savedTripId && savedTravelerId) {
+        setProductName(savedProductName || "");
+        // Trigger booking process with the saved tripId and travelerId
+        setTimeout(() => {
+          handleBookTrip(savedTripId, savedTravelerId);
+          // Clean up stored data
+          localStorage.removeItem("tripId");
+          localStorage.removeItem("travelerId");
+          sessionStorage.removeItem("productName");
+        }, 500);
+      }
+    }
+  }, []);
 
   const handleOriginChange = (placeResult) => {
     if (placeResult?.geometry?.location) {
@@ -78,6 +115,72 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
     }
   };
 
+  const handleBookTrip = async (tripId, travelerId) => {
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // Save the current state to localStorage/sessionStorage so we can return after login
+      sessionStorage.setItem("redirectAfterLogin", "/find-travelers");
+      localStorage.setItem("tripId", tripId);
+      localStorage.setItem("travelerId", travelerId); // Save the travelerId
+      sessionStorage.setItem("productName", productName);
+      
+      // Redirect to login
+      navigate("/login");
+      return;
+    }
+
+    // If we have a token, proceed with booking
+    setBookingInProgress(true);
+    setBookingStatus(prev => ({ ...prev, [tripId]: "pending" }));
+
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("token");
+      //const travelerId = localStorage.setItem("t") // Get travelerId from localStorage
+      //const traveler_id = travelerId; // Use the passed travelerId
+      localStorage.setItem("traveler_Id", travelerId);
+
+      console.log("Booking Request Data:", {
+        userId,
+        tripId,
+        travelerId, // Include travelerId in the request
+        productName,
+        status: "pending",
+      });
+      //console.log("Token:", t);
+      
+      const response = await axios.post(
+        "http://localhost:8080/api/bookings",
+        {
+          userId,
+          tripId,
+          travelerId, // Include travelerId in request body
+          productName,
+          status: "pending"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setBookingStatus(prev => ({ ...prev, [tripId]: "confirmed" }));
+      setTimeout(() => {
+        alert("Booking request sent successfully!");
+        navigate("/track-items");
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error booking trip:", error);
+      setBookingStatus(prev => ({ ...prev, [tripId]: "failed" }));
+      alert("Failed to book trip. Please try again.");
+    } finally {
+      setBookingInProgress(false);
+    }
+  };
+
   const formatTime = (timeString) => {
     if (!timeString) return "";
     const [hours, minutes] = timeString.split(":");
@@ -89,6 +192,15 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
       return `${Math.round(distance * 1000)} m`;
     }
     return `${distance.toFixed(1)} km`;
+  };
+
+  const getBookingButtonText = (tripId) => {
+    const status = bookingStatus[tripId];
+    if (!status) return "Book Trip";
+    if (status === "pending") return "Booking...";
+    if (status === "confirmed") return "Booked!";
+    if (status === "failed") return "Try Again";
+    return "Book Trip";
   };
 
   if (!isLoaded) {
@@ -119,6 +231,17 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
             />
           </div>
 
+          <div className="w-full">
+            <label className="block text-gray-700 font-medium mb-2">Product Name</label>
+            <input
+              type="text"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+              placeholder="Enter product name"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+            />
+          </div>
+
           <div className="flex justify-between w-full">
             <button
               onClick={onBack}
@@ -146,7 +269,7 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
 
             {travelers.length > 0 && (
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {travelers.map((item, index) => (
+                {travelers.map((item) => (
                   <div
                     key={item.trip.tripId}
                     className="p-4 bg-teal-50 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow"
@@ -184,12 +307,25 @@ export const FindTravelersPage = ({ onBack, onRouteSelect }) => {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-3 flex justify-end space-x-3">
                       <button
                         className="text-sm text-teal-600 hover:text-teal-800 font-medium"
                         onClick={() => alert(`Contact traveler ${item.trip.travelerId}`)}
                       >
                         Contact Traveler
+                      </button>
+                      <button
+                        className={`px-3 py-1 text-sm text-white font-medium rounded-lg transition-all ${
+                          bookingStatus[item.trip.tripId] === "confirmed"
+                            ? "bg-green-600 hover:bg-green-700"
+                            : bookingStatus[item.trip.tripId] === "failed"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-teal-600 hover:bg-teal-700"
+                        }`}
+                        onClick={() => handleBookTrip(item.trip.tripId, item.trip.travelerId)}
+                        disabled={bookingStatus[item.trip.tripId] === "pending" || bookingStatus[item.trip.tripId] === "confirmed"}
+                      >
+                        {getBookingButtonText(item.trip.tripId)}
                       </button>
                     </div>
                   </div>

@@ -21,19 +21,30 @@ export const ProfilePage = () => {
 
         if (response.ok) {
           const data = await response.json();
+          console.log("Profile data:", data);
+
+
+          // Save user_id into localStorage
+          if (data.user_id) {
+            localStorage.setItem("travelerId", data.user_id);
+          }
+
+          // Set profile data
           setProfile({
-            name: localStorage.getItem("firstName"),
+            name: localStorage.getItem("firstName") || "",
             aadhar: data.aadhar || "",
             age: data.age || "",
             photo: null,
-            photoPreview: data.photo.startsWith("http")
-              ? data.photo
-              : `http://localhost:8080/${data.photo}`,
+            photoPreview: data.photo
+              ? data.photo.startsWith("http")
+                ? data.photo
+                : `http://localhost:8080/${data.photo}`
+              : null,
           });
         } else {
           setProfile((prev) => ({
             ...prev,
-            name: localStorage.getItem("firstName"),
+            name: localStorage.getItem("firstName") || "",
           }));
         }
       } catch (error) {
@@ -76,6 +87,11 @@ export const ProfilePage = () => {
 
       if (response.ok) {
         alert("Profile updated successfully!");
+        // Optionally, refetch the profile after successful update
+        const updatedProfile = await response.json();
+        if (updatedProfile.user_id) {
+          localStorage.setItem("travelerId", updatedProfile.user_id);
+        }
       } else {
         alert("Error updating profile.");
       }
@@ -103,9 +119,7 @@ export const ProfilePage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600">
-              Name
-            </label>
+            <label className="block text-sm font-medium text-gray-600">Name</label>
             <input
               type="text"
               value={profile.name}

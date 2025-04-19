@@ -11,7 +11,10 @@ import { ProfilePage } from "./views/pages/ProfilePage";
 import ProtectedRoute from "./views/loginsign/ProtectedRoute"; // Import ProtectedRoute
 //import { ChooseTravelerPage } from "./views/pages/sender/ChooseTravelerPage";
 import { FindTravelersPage } from "./views/pages/sender/FindTravelersPage";
-
+import { TrackItemsPage } from "./views/pages/sender/TrackItemsPage"; 
+import { CourierPayment}  from "./views/pages/sender/CourierPayment"; 
+import {TravelerChatPage} from "./views/chat/TravelerPage";
+import {SenderChatPage} from "./views/chat/SenderPage";
 
 
 
@@ -48,8 +51,10 @@ function App() {
         <Route path="/sender-details" element={<SenderDetailsPage />} />
         <Route path="/traveler-details" element={<TravelerDetailsPage />} />
         <Route path="/find-travelers" element={<FindTravelersPage />} />
-
-        
+        <Route path="/track-items" element={<TrackItemsPage />} />
+        <Route path="/courier-payment" element={<CourierPayment />} />
+        <Route path="/traveler-chat" element={<TravelerChatPage />} />
+        <Route path="/sender-chat" element={<SenderChatPage />} />
 
 
         {/* Protected Profile Route */}

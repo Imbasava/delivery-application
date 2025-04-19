@@ -22,7 +22,7 @@ export const SignUpPage = () => {
     e.preventDefault();
 
     axios
-      .post('http://localhost:8080/api/users', formData)
+      .post('http://localhost:8080/api/users/register', formData)
       .then((response) => {
         alert("Sucessfully registerd");
         navigate('/login'); // Redirect to login page upon successful signup

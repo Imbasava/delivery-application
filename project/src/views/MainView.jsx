@@ -10,6 +10,11 @@ import packing from './images/packing.jpg';
 import delivery from './images/delivery.jpg';
 import video from './images/video.mp4';
 
+window.addEventListener('beforeunload', function () {
+  localStorage.clear();
+});
+
+
 export const MainView = ({
   mouseState,
   velocityFactor,

@@ -75,7 +75,8 @@ export const TravelerDetailsPage = () => {
         arrivalDate: formatDateTime(formValues.arrivalDate, formValues.arrivalTime),
         departureTime: formatDateTime(formValues.departureDate, formValues.departureTime),
         arrivalTime: formatDateTime(formValues.arrivalDate, formValues.arrivalTime),
-        status: "available"
+        status: "available",
+        courierFee: parseFloat(formValues.courierFee) || 0
       };
       
       console.log("Payload being sent:", tripData);
@@ -130,6 +131,7 @@ export const TravelerDetailsPage = () => {
     destinationLatLng: { lat: null, lng: null },
     packageType: "",
     dimensions: "",
+    courierFee: "",
   });
 
   const steps = ["Journey Details", "Package Details", "Confirmation"];
@@ -337,6 +339,18 @@ export const TravelerDetailsPage = () => {
                 placeholder="Enter dimensions in cm"
               />
             </Box>
+            <Box>
+        <Typography variant="h6" sx={{ mb: 1 }}>Courier Fee</Typography>
+        <TextField
+          variant="outlined"
+          fullWidth
+          type="number"
+          value={formValues.courierFee}
+          onChange={(e) => handleFormChange("courierFee", e.target.value)}
+          placeholder="Enter the fee the traveler needs"
+        />
+      </Box>
+            
           </Paper>
         );
       case 2:
@@ -401,26 +415,14 @@ export const TravelerDetailsPage = () => {
           color: 'white',
         }}
       >
-        <Avatar
-          sx={{
-            width: 64,
-            height: 64,
-            bgcolor: theme.palette.background.paper,
-            color: theme.palette.primary.main,
-            mb: 1,
-          }}
-        >
-          JD
-        </Avatar>
-        <Typography variant="h6">John Doe</Typography>
-        <Typography variant="body2">Traveler</Typography>
+         
       </Box>
       <Divider />
       <List>
         <ListItem button selected>
           <ListItemText primary="My Shipments" />
         </ListItem>
-        <ListItem button>
+        <ListItem button onClick={() => navigate("/traveler-chat")}> {/* Navigate to Chat */}
           <ListItemText primary="Messages" />
         </ListItem>
         <ListItem button onClick={() => navigate("/profile")}> {/* Navigate to Profile */}

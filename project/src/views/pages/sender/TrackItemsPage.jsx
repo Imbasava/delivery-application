@@ -1,303 +1,237 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Search, ArrowLeft, Loader, AlertCircle, Info } from 'lucide-react';
 
 export const TrackItemsPage = ({ onBack }) => {
-  const [deliveries, setDeliveries] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Fetch user's deliveries
-    const fetchDeliveries = async () => {
+    const fetchBookings = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // In a real app, you would authenticate the user and fetch their deliveries
-        // For now, we'll use mock data
-        // const response = await axios.get('http://localhost:8080/api/deliveries/user');
-        
-        // Mock data for demonstration
-        const mockDeliveries = [
-          {
-            id: 'DEL-1001',
-            itemName: 'Laptop',
-            status: 'in-transit',
-            pickupLocation: 'New York, NY',
-            dropLocation: 'Boston, MA',
-            pickupDate: '2025-04-15',
-            travelerName: 'John Smith',
-            travelerContact: '+1-555-123-4567',
-            expectedDeliveryDate: '2025-04-16',
-            currentLocation: 'Hartford, CT',
-            lastUpdated: '2025-04-15T14:30:00Z',
-            trackingEvents: [
-              { time: '2025-04-15T09:00:00Z', status: 'Picked up', location: 'New York, NY' },
-              { time: '2025-04-15T12:15:00Z', status: 'In transit', location: 'Hartford, CT' },
-              { time: '2025-04-15T14:30:00Z', status: 'On schedule', location: 'Hartford, CT' }
-            ]
-          },
-          {
-            id: 'DEL-1002',
-            itemName: 'Documents Package',
-            status: 'delivered',
-            pickupLocation: 'Chicago, IL',
-            dropLocation: 'Detroit, MI',
-            pickupDate: '2025-04-10',
-            travelerName: 'Alice Johnson',
-            travelerContact: '+1-555-987-6543',
-            expectedDeliveryDate: '2025-04-11',
-            currentLocation: 'Detroit, MI',
-            lastUpdated: '2025-04-11T16:45:00Z',
-            trackingEvents: [
-              { time: '2025-04-10T10:30:00Z', status: 'Picked up', location: 'Chicago, IL' },
-              { time: '2025-04-10T15:45:00Z', status: 'In transit', location: 'Gary, IN' },
-              { time: '2025-04-11T09:20:00Z', status: 'In transit', location: 'Kalamazoo, MI' },
-              { time: '2025-04-11T16:45:00Z', status: 'Delivered', location: 'Detroit, MI' }
-            ]
-          },
-          {
-            id: 'DEL-1003',
-            itemName: 'Birthday Gift',
-            status: 'pending',
-            pickupLocation: 'San Francisco, CA',
-            dropLocation: 'Los Angeles, CA',
-            pickupDate: '2025-04-18',
-            travelerName: 'Robert Chen',
-            travelerContact: '+1-555-567-8901',
-            expectedDeliveryDate: '2025-04-19',
-            currentLocation: 'San Francisco, CA',
-            lastUpdated: '2025-04-12T11:15:00Z',
-            trackingEvents: [
-              { time: '2025-04-12T11:15:00Z', status: 'Request confirmed', location: 'San Francisco, CA' }
-            ]
-          }
-        ];
-        
-        // Simulate API delay
-        setTimeout(() => {
-          setDeliveries(mockDeliveries);
+        const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+        if (!userId) {
+          setError("User not logged in. Please log in to view your bookings.");
           setLoading(false);
-        }, 1000);
-        
+          return;
+        }
+
+        // --- MOCK DELAY (Remove in production) ---
+        // await new Promise(resolve => setTimeout(resolve, 1500));
+        // --- END MOCK DELAY ---
+
+        const response = await axios.get(
+          `http://localhost:8080/api/bookings/user/${userId}`
+        );
+
+        const receivedBookings = response.data.bookings || response.data;
+
+        if (Array.isArray(receivedBookings)) {
+           // Optional: Enhance with mock data if needed during development
+           // const enhancedBookings = receivedBookings.map((b, index) => ({
+           //   ...b,
+           //   bookingId: b.bookingId || `MOCK-${index + 1}`,
+           //   productName: b.productName || `Sample Item #${index + 1}`,
+           //   status: b.status || ['delivered', 'processing', 'shipped', 'pending', 'cancelled'][Math.floor(Math.random() * 5)],
+           //   origin: b.origin || `Origin City ${String.fromCharCode(65 + index)}`,
+           //   destination: b.destination || `Destination City ${String.fromCharCode(80 + index)}`,
+           //   bookingDate: b.bookingDate || new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+           //   estimatedDelivery: b.estimatedDelivery || (Math.random() > 0.2 ? new Date(Date.now() + Math.random() * 5 * 24 * 60 * 60 * 1000).toLocaleDateString() : 'N/A'),
+           // }));
+           // setBookings(enhancedBookings);
+
+           setBookings(receivedBookings); // Use actual data
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setError("Received invalid data format from the server.");
+        }
       } catch (err) {
-        console.error('Error fetching deliveries:', err);
-        setError('Failed to load your deliveries. Please try again.');
+        console.error("Error fetching bookings:", err);
+        if (err.response) {
+          setError(`Error ${err.response.status}: ${err.response.data.message || 'Failed to load bookings.'}`);
+        } else if (err.request) {
+          setError("Could not connect to the server. Please check your connection.");
+        } else {
+          setError("An unexpected error occurred. Please try again.");
+        }
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchDeliveries();
+    fetchBookings();
   }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in-transit':
-        return 'bg-blue-100 text-blue-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (timeString) => {
-    return new Date(timeString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredDeliveries = deliveries.filter(delivery => 
-    delivery.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    delivery.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    delivery.travelerName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBookings = bookings.filter(
+    (booking) =>
+      booking.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.bookingId?.toString().toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getStatusClasses = (status) => {
+    const lowerStatus = status?.toLowerCase() || 'unknown';
+    switch (lowerStatus) {
+      case 'delivered':
+        return {
+          badge: "bg-green-100 text-green-800 border border-green-200",
+          border: "border-green-500"
+        };
+      case 'shipped':
+      case 'processing':
+      case 'in transit':
+         return {
+          badge: "bg-blue-100 text-blue-800 border border-blue-200",
+          border: "border-blue-500"
+        };
+      case 'pending':
+      case 'booked':
+        return {
+          badge: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+          border: "border-yellow-500"
+        };
+      case 'cancelled':
+      case 'failed':
+        return {
+          badge: "bg-red-100 text-red-800 border border-red-200",
+          border: "border-red-500"
+        };
+      default:
+        return {
+          badge: "bg-gray-100 text-gray-800 border border-gray-200",
+          border: "border-gray-400" // A neutral border for unknown status
+        };
+    }
+  };
+
   return (
-    <div className="w-full max-w-4xl p-8 space-y-6 bg-white shadow-2xl rounded-2xl text-gray-800">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-teal-700">Track My Items</h2>
-        <button 
-          onClick={onBack}
-          className="px-4 py-2 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-300"
-        >
-          Back to Dashboard
-        </button>
-      </div>
+    // *** Added Background Wrapper Div ***
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
 
-      {/* Search Bar */}
-      <div className="relative">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="Search by ID, item name, or traveler name..."
-          className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
-        />
-        <span className="absolute left-3 top-2.5 text-gray-400">
-          🔍
-        </span>
-      </div>
-
-      {/* Deliveries List or Detail View */}
-      {loading ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-        </div>
-      ) : error ? (
-        <div className="text-center text-red-500 p-4">{error}</div>
-      ) : selectedDelivery ? (
-        // Delivery Detail View
-        <div className="space-y-6">
+      {/* Original Content Card - slightly adjusted max-width */}
+      <div className="w-full max-w-6xl mx-auto p-6 md:p-8 space-y-8 bg-white shadow-2xl rounded-2xl text-gray-800 border border-gray-200/50">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-gray-200 pb-6">
+          <h1 className="text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-blue-600">
+            Track Your Shipments
+          </h1>
           <button
-            onClick={() => setSelectedDelivery(null)}
-            className="flex items-center text-teal-700 hover:text-teal-500"
+            onClick={onBack}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:from-teal-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5"
           >
-            <span>← Back to all deliveries</span>
+            <ArrowLeft size={18} />
+            Back to Dashboard
           </button>
-          
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-gray-800">{selectedDelivery.itemName}</h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedDelivery.status)}`}>
-                {selectedDelivery.status.charAt(0).toUpperCase() + selectedDelivery.status.slice(1).replace('-', ' ')}
-              </span>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Search by product, status, location, or ID..."
+            className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition duration-200 shadow-sm hover:shadow-md focus:shadow-lg"
+            aria-label="Search bookings"
+          />
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 peer-focus:text-teal-600">
+            <Search size={20} />
+          </span>
+        </div>
+
+        {/* Content Area */}
+        <div className="min-h-[300px]"> {/* Ensures minimum height */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center text-center p-10 text-teal-600">
+              <Loader size={48} className="animate-spin mb-4" />
+              <p className="text-lg font-medium">Loading your bookings...</p>
+              <p className="text-sm text-gray-500">Please wait a moment.</p>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <p className="text-sm text-gray-500">Tracking ID</p>
-                <p className="font-medium">{selectedDelivery.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Traveler</p>
-                <p className="font-medium">{selectedDelivery.travelerName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Pickup Location</p>
-                <p className="font-medium">{selectedDelivery.pickupLocation}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Destination</p>
-                <p className="font-medium">{selectedDelivery.dropLocation}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Current Location</p>
-                <p className="font-medium">{selectedDelivery.currentLocation}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Expected Delivery</p>
-                <p className="font-medium">{formatDate(selectedDelivery.expectedDeliveryDate)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Contact</p>
-                <p className="font-medium">{selectedDelivery.travelerContact}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Last Updated</p>
-                <p className="font-medium">{formatDate(selectedDelivery.lastUpdated)} at {formatTime(selectedDelivery.lastUpdated)}</p>
-              </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center text-center p-10 bg-red-50 border-2 border-dashed border-red-200 rounded-lg text-red-700">
+              <AlertCircle size={48} className="mb-4 text-red-500" />
+              <p className="text-lg font-semibold">Oops! Something went wrong.</p>
+              <p className="mt-1 text-sm max-w-md">{error}</p> { /* Limit width of long errors */}
             </div>
-            
-            {/* Tracking Timeline */}
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Tracking History</h4>
-              <div className="space-y-4">
-                {selectedDelivery.trackingEvents.map((event, index) => (
-                  <div key={index} className="flex">
-                    <div className="mr-4 flex flex-col items-center">
-                      <div className="h-4 w-4 rounded-full bg-teal-500"></div>
-                      {index < selectedDelivery.trackingEvents.length - 1 && (
-                        <div className="h-full w-0.5 bg-teal-200 my-1"></div>
-                      )}
-                    </div>
-                    <div className="flex-grow pb-4">
-                      <div className="flex justify-between items-start">
-                        <span className="font-medium">{event.status}</span>
-                        <span className="text-sm text-gray-500">{formatDate(event.time)} at {formatTime(event.time)}</span>
+          ) : filteredBookings.length > 0 ? (
+            <div className="space-y-5">
+              {filteredBookings.map((booking) => {
+                 const statusStyle = getStatusClasses(booking.status);
+                 return (
+                  <div
+                    key={booking.bookingId}
+                    className={`bg-white border ${statusStyle.border} border-l-[6px] rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out overflow-hidden transform hover:scale-[1.02]`} // Added hover scale effect
+                  >
+                    <div className="p-5">
+                      <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+                        {/* Left Side: Product Info & Status */}
+                        <div className="flex-grow">
+                          <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-1">
+                            {booking.productName || "N/A"}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-3">
+                            Booking ID: <span className="font-medium text-gray-600">{booking.bookingId || "N/A"}</span>
+                          </p>
+                          <span
+                            className={`inline-block px-3 py-1 text-xs font-semibold rounded-full leading-tight ${statusStyle.badge}`}
+                          >
+                            {booking.status ? booking.status.toUpperCase() : "UNKNOWN"}
+                          </span>
+                        </div>
+
+                        {/* Right Side: Origin/Destination & Dates */}
+                        <div className="flex-shrink-0 w-full md:w-auto md:max-w-[55%] grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mt-3 md:mt-0">
+                          <div>
+                            <p className="font-medium text-gray-500">Origin:</p>
+                            <p className="text-gray-700">{booking.origin || "N/A"}</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-500">Destination:</p>
+                            <p className="text-gray-700">{booking.destination || "N/A"}</p>
+                          </div>
+                          {booking.bookingDate && (
+                              <div className="mt-2 sm:mt-0">
+                                  <p className="font-medium text-gray-500">Booked On:</p>
+                                  <p className="text-gray-700">{booking.bookingDate}</p>
+                              </div>
+                          )}
+                          {booking.estimatedDelivery && booking.estimatedDelivery !== 'N/A' && (
+                              <div className="mt-2 sm:mt-0">
+                                  <p className="font-medium text-gray-500">Est. Delivery:</p>
+                                  <p className="text-gray-700">{booking.estimatedDelivery}</p>
+                              </div>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600">{event.location}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                 );
+                })}
             </div>
-            
-            {/* Contact Traveler Button */}
-            <div className="mt-6">
-              <button className="w-full px-4 py-2 bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-600 focus:ring-4 focus:ring-teal-400 focus:outline-none transition duration-300">
-                Contact Traveler
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : filteredDeliveries.length === 0 ? (
-        <div className="text-center p-8">
-          {searchTerm ? (
-            <p className="text-gray-500">No deliveries found matching "{searchTerm}".</p>
           ) : (
-            <p className="text-gray-500">You don't have any deliveries yet.</p>
+            <div className="flex flex-col items-center justify-center text-center p-10 bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200 rounded-lg text-gray-500 shadow-inner">
+              <Info size={48} className="mb-4 text-gray-400" />
+              <p className="text-lg font-semibold text-gray-700">No Bookings Found</p>
+              <p className="mt-1 text-sm">
+                {searchTerm
+                  ? "We couldn't find any bookings matching your search."
+                  : "Looks like you haven't made any bookings yet!"}
+              </p>
+            </div>
           )}
         </div>
-      ) : (
-        // Deliveries List View
-        <div className="space-y-4">
-          {filteredDeliveries.map((delivery) => (
-            <div 
-              key={delivery.id} 
-              className="p-4 border border-gray-200 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200"
-              onClick={() => setSelectedDelivery(delivery)}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{delivery.itemName}</h3>
-                  <p className="text-sm text-gray-600 mt-1">ID: {delivery.id}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(delivery.status)}`}>
-                  {delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1).replace('-', ' ')}
-                </span>
-              </div>
-              
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div>
-                  <span className="text-gray-500">From:</span> {delivery.pickupLocation}
-                </div>
-                <div>
-                  <span className="text-gray-500">To:</span> {delivery.dropLocation}
-                </div>
-                <div>
-                  <span className="text-gray-500">Traveler:</span> {delivery.travelerName}
-                </div>
-                <div>
-                  <span className="text-gray-500">Expected Delivery:</span> {formatDate(delivery.expectedDeliveryDate)}
-                </div>
-              </div>
-              
-              <div className="mt-3 flex justify-between items-center">
-                <p className="text-xs text-gray-500">Last updated: {formatDate(delivery.lastUpdated)} at {formatTime(delivery.lastUpdated)}</p>
-                <button className="text-teal-700 hover:text-teal-500 text-sm font-medium">View Details →</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      </div>
+
+    </div> // *** Closing Background Wrapper Div ***
   );
 };
